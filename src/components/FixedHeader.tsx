@@ -17,21 +17,24 @@ export default function FixedHeader({ children }: FixedHeaderProps) {
 
   // Handle scroll event to add shadow when scrolled
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
+    // Only add scroll listener if navigation is shown
+    if (!hideNavigation) {
+      const handleScroll = () => {
+        setIsScrolled(window.scrollY > 10);
+      };
 
-    // Add event listener
-    window.addEventListener('scroll', handleScroll);
+      // Add event listener
+      window.addEventListener('scroll', handleScroll);
 
-    // Initial check
-    handleScroll();
+      // Initial check
+      handleScroll();
 
-    // Clean up
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, []);
+      // Clean up
+      return () => {
+        window.removeEventListener('scroll', handleScroll);
+      };
+    }
+  }, [hideNavigation]);
 
   return (
     <>
