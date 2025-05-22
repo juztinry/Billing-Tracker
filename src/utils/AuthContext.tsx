@@ -1,10 +1,10 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { 
-  User, 
-  Session, 
-  AuthError, 
+import {
+  User,
+  Session,
+  AuthError,
   SignInWithPasswordCredentials
 } from '@supabase/supabase-js';
 import { supabase } from './supabase';
@@ -12,9 +12,9 @@ import { supabase } from './supabase';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signUp: (data: { email: string; password: string; options?: { data?: Record<string, any>; emailRedirectTo?: string } }) => 
+  signUp: (data: { email: string; password: string; options?: { data?: Record<string, any>; emailRedirectTo?: string } }) =>
     Promise<{ data: { user: User | null; session: Session | null } | null; error: AuthError | null }>;
-  signIn: (data: SignInWithPasswordCredentials) => 
+  signIn: (data: SignInWithPasswordCredentials) =>
     Promise<{ data: { user: User | null; session: Session | null } | null; error: AuthError | null }>;
   signOut: () => Promise<{ error: AuthError | null }>;
 }
@@ -35,7 +35,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user || null);
       setLoading(false);
-      
+
       // Listen for auth changes
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         (_event, session) => {
@@ -50,8 +50,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   const value = {
-    signUp: (data) => supabase.auth.signUp(data),
-    signIn: (data) => supabase.auth.signInWithPassword(data),
+    signUp: (data: { email: string; password: string; options?: { data?: Record<string, any>; emailRedirectTo?: string } }) =>
+      supabase.auth.signUp(data),
+    signIn: (data: SignInWithPasswordCredentials) =>
+      supabase.auth.signInWithPassword(data),
     signOut: () => supabase.auth.signOut(),
     user,
     loading
@@ -70,4 +72,4 @@ export const useAuth = (): AuthContextType => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}; 
+};
