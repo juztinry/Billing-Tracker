@@ -12,8 +12,8 @@ export default function FixedHeader({ children }: FixedHeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
 
-  // Don't show navigation on login page
-  const hideNavigation = pathname === '/login';
+  // Don't show navigation on login page or register page
+  const hideNavigation = pathname === '/login' || pathname === '/register';
 
   // Handle scroll event to add shadow when scrolled
   useEffect(() => {
