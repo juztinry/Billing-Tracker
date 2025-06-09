@@ -5,6 +5,7 @@ import { useTheme } from '@/utils/ThemeContext';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/utils/supabase';
 import { Tables } from '@/types/supabase';
+import { testSupabaseConnection } from '@/utils/testConnection';
 
 type WaterBill = Tables<'water_bills'>;
 type ElectricityBill = Tables<'electricity_bills'>;
@@ -14,13 +15,29 @@ export default function Dashboard() {
   const { darkMode } = useTheme();
   const [waterBills, setWaterBills] = useState<WaterBill[]>([]);
   const [electricityBills, setElectricityBills] = useState<ElectricityBill[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
 
   useEffect(() => {
     if (user) {
-      fetchWaterBills();
-      fetchElectricityBills();
+      setLoading(true);
+      setError(null);
+
+      // First test the connection, then fetch data
+      testSupabaseConnection()
+        .then(result => {
+          if (!result.success) {
+            setError(result.error || 'Connection test failed');
+            setLoading(false);
+            return;
+          }
+
+          // If connection test passes, fetch the data
+          return Promise.all([fetchWaterBills(), fetchElectricityBills()]);
+        })
+        .finally(() => setLoading(false));
     }
   }, [user]);
 
@@ -37,6 +54,8 @@ export default function Dashboard() {
       setWaterBills(data || []);
     } catch (error) {
       console.error('Error fetching water bills:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setError(`Failed to fetch water bills: ${errorMessage}`);
     }
   }
 
@@ -53,6 +72,8 @@ export default function Dashboard() {
       setElectricityBills(data || []);
     } catch (error) {
       console.error('Error fetching electricity bills:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setError(`Failed to fetch electricity bills: ${errorMessage}`);
     }
   }
 
@@ -78,6 +99,49 @@ export default function Dashboard() {
   // Get max consumption for setting chart height
   const maxElectricityConsumption = Math.max(...selectedYearElectricityBills.map(bill => bill.consumption), 250);
   const maxWaterConsumption = Math.max(...selectedYearWaterBills.map(bill => bill.consumption), 18);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <h1 className={`
+          text-3xl font-bold mb-8
+          ${darkMode
+            ? 'text-gradient-primary text-glow-primary'
+            : 'text-gradient-primary'
+          }
+        `}>
+          Your Billing Dashboard
+        </h1>
+        <div className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg mb-4 shadow-sm">
+          <h3 className="font-bold mb-2">Error Loading Dashboard</h3>
+          <p>{error}</p>
+          <button
+            onClick={() => {
+              setError(null);
+              setLoading(true);
+              Promise.all([fetchWaterBills(), fetchElectricityBills()])
+                .finally(() => setLoading(false));
+            }}
+            className="mt-3 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
